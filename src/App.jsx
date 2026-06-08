@@ -19,6 +19,9 @@ const CATEGORIES = [
       { fi: "Ei", fr: "Non", hint: "non" },
       { fi: "Mitä kuuluu?", fr: "Ça va ?", hint: "sa va" },
       { fi: "Hyvää, kiitos", fr: "Ça va bien, merci", hint: "sa va bjen mer-sii" },
+      { fi: "Hauska tavata", fr: "Enchanté", hint: "an-šan-te" },
+      { fi: "Hyvää yötä", fr: "Bonne nuit", hint: "bon nüi" },
+      { fi: "Tervetuloa", fr: "Bienvenue", hint: "bjen-vö-ny" },
     ],
   },
   {
@@ -35,6 +38,12 @@ const CATEGORIES = [
       { fi: "Se oli hyvää", fr: "C'était délicieux", hint: "se-te de-li-sjö" },
       { fi: "Olen kasvissyöjä", fr: "Je suis végétarien", hint: "že sui ve-že-ta-rjen" },
       { fi: "Vettä, kiitos", fr: "De l'eau, s'il vous plaît", hint: "dö lo sil vu ple" },
+      { fi: "Jälkiruoka", fr: "Le dessert", hint: "lö de-ser" },
+      { fi: "Jäätelö", fr: "Une glace", hint: "yn glas" },
+      { fi: "Suklaajäätelö", fr: "Une glace au chocolat", hint: "yn glas o šo-ko-la" },
+      { fi: "Vaniljajäätelö", fr: "Une glace à la vanille", hint: "yn glas a la va-nij" },
+      { fi: "Saanko jäätelön?", fr: "Je voudrais une glace", hint: "žö vud-re yn glas" },
+      { fi: "Lisää leipää, kiitos", fr: "Encore du pain, s'il vous plaît", hint: "an-kor dy pan sil vu ple" },
     ],
   },
   {
@@ -51,6 +60,8 @@ const CATEGORIES = [
       { fi: "Croissant", fr: "Un croissant", hint: "an krua-san" },
       { fi: "Sokeria?", fr: "Du sucre ?", hint: "dy sykr" },
       { fi: "Terassille", fr: "En terrasse", hint: "an te-ras" },
+      { fi: "Espresso", fr: "Un expresso", hint: "an eks-pre-so" },
+      { fi: "Lasi vettä", fr: "Un verre d'eau", hint: "an ver do" },
     ],
   },
   {
@@ -66,6 +77,8 @@ const CATEGORIES = [
       { fi: "Olut", fr: "Une bière", hint: "yn bjer" },
       { fi: "Mehu", fr: "Un jus", hint: "an žy" },
       { fi: "Kuohuvesi", fr: "De l'eau gazeuse", hint: "dö lo ga-zöz" },
+      { fi: "Limonadi", fr: "Une limonade", hint: "yn li-mo-nad" },
+      { fi: "Samppanja", fr: "Du champagne", hint: "dy šam-pañ" },
       { fi: "Kippis!", fr: "Santé !", hint: "san-te" },
     ],
   },
@@ -83,6 +96,9 @@ const CATEGORIES = [
       { fi: "Auta!", fr: "Au secours !", hint: "o sö-kuur" },
       { fi: "En tiedä", fr: "Je ne sais pas", hint: "že nö se pa" },
       { fi: "Hetki vain", fr: "Un instant", hint: "an an-stan" },
+      { fi: "Haluaisin...", fr: "Je voudrais...", hint: "žö vud-re" },
+      { fi: "Voitteko auttaa?", fr: "Pouvez-vous m'aider ?", hint: "pu-ve vu me-de" },
+      { fi: "Missä on hotelli?", fr: "Où est l'hôtel ?", hint: "u e lo-tel" },
     ],
   },
   {
@@ -101,9 +117,19 @@ const CATEGORIES = [
       { fi: "Kahdeksan", fr: "Huit", hint: "üit" },
       { fi: "Yhdeksän", fr: "Neuf", hint: "nöf" },
       { fi: "Kymmenen", fr: "Dix", hint: "dis" },
+      { fi: "Nolla", fr: "Zéro", hint: "ze-ro" },
+      { fi: "Sata", fr: "Cent", hint: "san" },
     ],
   },
 ];
+
+// Flat list of every phrase, tagged with its category, for global search.
+const ALL_ITEMS = CATEGORIES.flatMap((c) =>
+  c.items.map((it, i) => ({ ...it, catId: c.id, catTitle: c.title, catIcon: c.icon, key: c.id + i }))
+);
+
+// Lowercase + strip accents so "vetta" matches "Vettä" and "cafe" matches "café".
+const norm = (s) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
 
 // ============ AUDIO ============
 // Notes on why audio fails in browsers:
@@ -237,16 +263,115 @@ export default function App() {
 
 function Home({ onOpen, onQuiz, accent, speak, supported, hasFrench, voiceCount, speakingId }) {
   const testId = "__test__";
+  const [query, setQuery] = useState("");
+  const q = norm(query.trim());
+  const searching = q.length > 0;
+  const results = searching
+    ? ALL_ITEMS.filter(
+        (it) => norm(it.fi).includes(q) || norm(it.fr).includes(q) || norm(it.hint).includes(q)
+      )
+    : [];
+
   return (
     <div style={{ padding: "28px 20px 40px" }}>
       <p style={{ margin: 0, letterSpacing: 3, fontSize: 12, color: "#a08c6a", fontFamily: "system-ui" }}>
         SUOMI → RANSKA
       </p>
       <h1 style={{ fontSize: 38, margin: "4px 0 2px", fontWeight: 400 }}>Bonjour</h1>
-      <p style={{ margin: "0 0 22px", color: "#7a7060", fontStyle: "italic" }}>
+      <p style={{ margin: "0 0 18px", color: "#7a7060", fontStyle: "italic" }}>
         Ranskaa matkaa varten · alusta alkaen
       </p>
 
+      {/* Search box — filters every phrase across all categories as you type */}
+      <div style={{ position: "relative", marginBottom: 18 }}>
+        <span
+          aria-hidden="true"
+          style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 16, opacity: 0.5 }}
+        >
+          🔍
+        </span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Etsi sanaa tai lausetta…"
+          aria-label="Etsi"
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "13px 40px 13px 40px",
+            fontSize: 16,
+            fontFamily: "system-ui",
+            color: "#2b2620",
+            background: "#fff",
+            border: "1px solid #ecdfc6",
+            borderRadius: 14,
+            outline: "none",
+          }}
+        />
+        {searching && (
+          <button
+            onClick={() => setQuery("")}
+            aria-label="Tyhjennä haku"
+            style={{
+              position: "absolute",
+              right: 8,
+              top: "50%",
+              transform: "translateY(-50%)",
+              border: "none",
+              background: "transparent",
+              fontSize: 18,
+              color: "#a08c6a",
+              cursor: "pointer",
+              padding: 6,
+            }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {searching ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {results.length === 0 ? (
+            <p style={{ color: "#7a7060", fontStyle: "italic", fontFamily: "system-ui", fontSize: 14 }}>
+              Ei tuloksia haulle “{query.trim()}”.
+            </p>
+          ) : (
+            results.map((it) => (
+              <PhraseRow
+                key={it.key}
+                item={it}
+                id={it.key}
+                speak={speak}
+                accent={accent}
+                speakingId={speakingId}
+                tag={`${it.catIcon} ${it.catTitle}`}
+              />
+            ))
+          )}
+        </div>
+      ) : (
+        <HomeBrowse
+          onOpen={onOpen}
+          onQuiz={onQuiz}
+          accent={accent}
+          speak={speak}
+          supported={supported}
+          hasFrench={hasFrench}
+          voiceCount={voiceCount}
+          speakingId={speakingId}
+          testId={testId}
+        />
+      )}
+    </div>
+  );
+}
+
+// The default home content (audio test, category grid, quiz) shown when not searching.
+function HomeBrowse({ onOpen, onQuiz, accent, speak, supported, hasFrench, voiceCount, speakingId, testId }) {
+  return (
+    <>
       {/* Audio check card — always visible so sound problems aren't silent */}
       <div
         style={{
@@ -334,6 +459,51 @@ function Home({ onOpen, onQuiz, accent, speak, supported, hasFrench, voiceCount,
       >
         🎯 Harjoittele (visa)
       </button>
+    </>
+  );
+}
+
+// A single tappable phrase card. Shared by the category list and search results.
+// `tag` shows the source category (used only in search results).
+function PhraseRow({ item, id, speak, accent, speakingId, tag }) {
+  return (
+    <div
+      style={{
+        background: "#fff",
+        borderRadius: 16,
+        padding: "14px 16px",
+        boxShadow: "0 2px 12px rgba(80,60,20,0.06)",
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+      }}
+    >
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 13, color: "#a08c6a", fontFamily: "system-ui" }}>{item.fi}</div>
+        <div style={{ fontSize: 21, margin: "2px 0", color: "#1a1814" }}>{item.fr}</div>
+        <div style={{ fontSize: 13, color: accent, fontStyle: "italic" }}>[{item.hint}]</div>
+        {tag && (
+          <div style={{ fontSize: 11, color: "#a08c6a", fontFamily: "system-ui", marginTop: 4 }}>{tag}</div>
+        )}
+      </div>
+      <button
+        onClick={() => speak(item.fr, id)}
+        aria-label="Kuuntele"
+        style={{
+          border: "none",
+          width: 52,
+          height: 52,
+          borderRadius: "50%",
+          background: speakingId === id ? "#2f9e44" : accent,
+          color: "#fff",
+          fontSize: 22,
+          cursor: "pointer",
+          flexShrink: 0,
+          transition: "background .15s",
+        }}
+      >
+        🔊
+      </button>
     </div>
   );
 }
@@ -344,42 +514,14 @@ function PhraseList({ cat, onBack, speak, accent, speakingId }) {
       <BackBar onBack={onBack} title={cat.title} sub={cat.sub} accent={accent} />
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {cat.items.map((it, i) => (
-          <div
+          <PhraseRow
             key={i}
-            style={{
-              background: "#fff",
-              borderRadius: 16,
-              padding: "14px 16px",
-              boxShadow: "0 2px 12px rgba(80,60,20,0.06)",
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, color: "#a08c6a", fontFamily: "system-ui" }}>{it.fi}</div>
-              <div style={{ fontSize: 21, margin: "2px 0", color: "#1a1814" }}>{it.fr}</div>
-              <div style={{ fontSize: 13, color: accent, fontStyle: "italic" }}>[{it.hint}]</div>
-            </div>
-            <button
-              onClick={() => speak(it.fr, cat.id + i)}
-              aria-label="Kuuntele"
-              style={{
-                border: "none",
-                width: 52,
-                height: 52,
-                borderRadius: "50%",
-                background: speakingId === cat.id + i ? "#2f9e44" : accent,
-                color: "#fff",
-                fontSize: 22,
-                cursor: "pointer",
-                flexShrink: 0,
-                transition: "background .15s",
-              }}
-            >
-              🔊
-            </button>
-          </div>
+            item={it}
+            id={cat.id + i}
+            speak={speak}
+            accent={accent}
+            speakingId={speakingId}
+          />
         ))}
       </div>
     </div>
