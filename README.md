@@ -19,6 +19,15 @@ npm run build
 
 The output lands in `dist/`. Host that folder anywhere static (GitHub Pages, Netlify, Vercel). On each phone, open the hosted URL and use "Add to Home Screen" so it behaves like an app.
 
+## Deploy to GitHub Pages
+
+This repo ships a workflow (`.github/workflows/deploy.yml`) that builds the app
+and publishes it to GitHub Pages on every push to `main`.
+
+One-time setup: in the repo, open **Settings → Pages → Build and deployment**
+and set **Source** to **GitHub Actions**. After that, each merge to `main`
+deploys automatically to `https://vkomulai.github.io/ranska-app/`.
+
 ## Audio notes
 
 - iOS Safari unlocks speech on the first tap; the app primes it automatically.
