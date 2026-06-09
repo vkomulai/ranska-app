@@ -2,6 +2,13 @@
 
 A small Finnish-to-French travel phrasebook with audio pronunciation. Built for zero prior knowledge, sized for phones (Android and iOS). Categories cover greetings, restaurant, café, drinks, useful phrases, and numbers, plus a practice quiz. Pronunciation uses the device's built-in French text-to-speech voice, so it works offline once the page is loaded.
 
+Two directions, switchable from a toggle on the home screen:
+
+- **🗣️ Sano** — Finnish → French, for saying things (greetings, restaurant, café, drinks, useful phrases, numbers) plus a practice quiz.
+- **🍽️ Lue menu** — French → Finnish, for reading a French menu (menu words, common dishes, pizza ingredients).
+
+A search box filters the phrases in the current direction as you type; it ignores accents and case.
+
 ## Run locally
 
 ```bash
